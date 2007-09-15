@@ -38,7 +38,7 @@ i%{_gcj_support}}%{!?_gcj_support:0}}}
 
 Name:           plexus-i18n
 Version:        1.0
-Release:        %mkrel 0.b6.3.1.1
+Release:        %mkrel 0.b6.3.1.2
 Epoch:          0
 Summary:        Plexus I18N Component
 License:        Apache Software License
@@ -67,8 +67,6 @@ Requires:  plexus-utils
 
 %if %{gcj_support}
 BuildRequires:                java-gcj-compat-devel
-Requires(post):                java-gcj-compat
-Requires(postun):        java-gcj-compat
 %endif
 
 %description
