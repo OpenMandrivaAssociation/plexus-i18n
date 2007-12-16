@@ -38,7 +38,7 @@ i%{_gcj_support}}%{!?_gcj_support:0}}}
 
 Name:           plexus-i18n
 Version:        1.0
-Release:        %mkrel 0.b6.3.1.2
+Release:        %mkrel 0.b6.3.1.3
 Epoch:          0
 Summary:        Plexus I18N Component
 License:        Apache Software License
@@ -56,7 +56,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 %if ! %{gcj_support}
 BuildArch:      noarch
 %endif
-BuildRequires:  jpackage-utils >= 0:1.6
+BuildRequires:  java-rpmbuild >= 0:1.6
 BuildRequires:  ant >= 0:1.6
 BuildRequires:  classworlds >= 0:1.1
 BuildRequires:  plexus-container-default 
