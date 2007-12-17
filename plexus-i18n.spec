@@ -51,7 +51,6 @@ Source1:        plexus-i18n-1.0-build.xml
 Source2:        plexus-i18n-1.0-project.xml
 Source3:        plexus-i18n-1.0-plexus-components.xml
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %if ! %{gcj_support}
 BuildArch:      noarch
