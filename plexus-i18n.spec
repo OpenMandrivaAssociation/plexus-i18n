@@ -1,4 +1,4 @@
-# Copyright (c) 2000-2005, JPackage Project
+# Copyright (c) 2000-2007, JPackage Project
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,17 +28,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-%define _with_gcj_support 1
-
-%define gcj_support %{?_with_gcj_support:1}%{!?_with_gcj_support:
-%{?_without_gcj_support:0}%{!?_without_gcj_support:%{?_gcj_support:
-i%{_gcj_support}}%{!?_gcj_support:0}}}
-
 %define gcj_support 1
+
+# If you don't want to build with maven, and use straight ant instead,
+# give rpmbuild option '--without maven'
+
+%define with_maven %{!?_without_maven:1}%{?_without_maven:0}
+%define without_maven %{?_without_maven:1}%{!?_without_maven:0}
+
+%define section     free
+%define parent plexus
+%define subname i18n
 
 Name:           plexus-i18n
 Version:        1.0
-Release:        %mkrel 0.b6.3.1.3
+Release:        %mkrel 0.b6.5.0.1
 Epoch:          0
 Summary:        Plexus I18N Component
 License:        Apache Software License
@@ -49,7 +53,8 @@ Source0:        plexus-i18n-1.0-beta-6-src.tar.gz
 # tar czf plexus-i18n.tar.gz plexus-i18n-1.0-beta-6/
 Source1:        plexus-i18n-1.0-build.xml
 Source2:        plexus-i18n-1.0-project.xml
-Source3:        plexus-i18n-1.0-plexus-components.xml
+Source3:        plexus-i18n-settings.xml
+Source4:        plexus-i18n-1.0-jpp-depmap.xml
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
@@ -58,6 +63,17 @@ BuildArch:      noarch
 %endif
 BuildRequires:  java-rpmbuild >= 0:1.6
 BuildRequires:  ant >= 0:1.6
+%if %{with_maven}
+BuildRequires:  maven2 >= 2.0.4-10jpp
+BuildRequires:  maven2-plugin-compiler
+BuildRequires:  maven2-plugin-install
+BuildRequires:  maven2-plugin-jar
+BuildRequires:  maven2-plugin-javadoc
+BuildRequires:  maven2-plugin-resources
+BuildRequires:  maven2-plugin-surefire
+BuildRequires:  plexus-maven-plugin
+%endif
+
 BuildRequires:  classworlds >= 0:1.1
 BuildRequires:  plexus-container-default 
 BuildRequires:  plexus-utils 
@@ -88,12 +104,36 @@ Javadoc for %{name}.
 
 %prep
 %setup -q -n plexus-i18n-1.0-beta-6
+%remove_java_binaries
 cp %{SOURCE1} build.xml
 cp %{SOURCE2} project.xml
-mkdir -p src/main/resources/META-INF/plexus
-cp %{SOURCE3} src/main/resources/META-INF/plexus/components.xml
+cp %{SOURCE3} settings.xml
+
 
 %build
+%if %{with_maven}
+sed -i -e "s|<url>__JPP_URL_PLACEHOLDER__</url>|<url>file://`pwd`/.m2/repository</url>|g" settings.xml
+sed -i -e "s|<url>__JAVADIR_PLACEHOLDER__</url>|<url>file://`pwd`/external_repo</url>|g" settings.xml
+sed -i -e "s|<url>__MAVENREPO_DIR_PLACEHOLDER__</url>|<url>file://`pwd`/.m2/repository</url>|g" settings.xml
+sed -i -e "s|<url>__MAVENDIR_PLUGIN_PLACEHOLDER__</url>|<url>file:///usr/share/maven2/plugins</url>|g" settings.xml
+sed -i -e "s|<url>__ECLIPSEDIR_PLUGIN_PLACEHOLDER__</url>|<url>file:///usr/share/eclipse/plugins</url>|g" settings.xml
+
+export MAVEN_REPO_LOCAL=$(pwd)/.m2/repository
+mkdir -p $MAVEN_REPO_LOCAL
+
+mkdir external_repo
+ln -s %{_javadir} external_repo/JPP
+
+mvn-jpp \
+        -e \
+        -s $(pwd)/settings.xml \
+        -Dmaven2.jpp.mode=true \
+        -Dmaven2.jpp.depmap.file=%{SOURCE4} \
+        -Dmaven.repo.local=$MAVEN_REPO_LOCAL \
+        install javadoc:javadoc
+
+%else
+
 mkdir -p target/lib
 build-jar-repository -s -p target/lib \
 classworlds \
@@ -102,6 +142,9 @@ plexus/utils \
 
 %{ant} jar javadoc
 
+%endif
+
+
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -109,37 +152,45 @@ rm -rf $RPM_BUILD_ROOT
 install -d -m 755 $RPM_BUILD_ROOT%{_javadir}/plexus
 install -pm 644 target/%{name}-%{version}-beta-6.jar \
   $RPM_BUILD_ROOT%{_javadir}/plexus/i18n-%{version}.jar
-(cd $RPM_BUILD_ROOT%{_javadir}/plexus && for jar in *-%{version}*; \
-  do ln -sf ${jar} `echo $jar| sed  "s|-%{version}||g"`; done)
+%add_to_maven_depmap org.codehaus.plexus %{name} %{version} JPP/%{parent} %{subname}
+
+(cd $RPM_BUILD_ROOT%{_javadir}/plexus && for jar in *-%{version}*; do ln -sf ${jar} `echo $jar| sed  "s|-%{version}||g"`; done)
+
+# poms
+install -d -m 755 $RPM_BUILD_ROOT%{_datadir}/maven2/poms
+install -pm 644 pom.xml \
+    $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.%{parent}-%{subname}.pom
+
 # javadoc
 install -d -m 755 $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-cp -pr target/docs/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} $RPM_BUILD_ROOT%{_javadocdir}/%{name} # ghost symlink
+cp -pr target/site/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
+ln -s %{name}-%{version} $RPM_BUILD_ROOT%{_javadocdir}/%{name} 
 
 
-%if %{gcj_support}
-%{_bindir}/aot-compile-rpm
-%endif
+%{gcj_compile}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%if %{gcj_support}
+
 %post
+%update_maven_depmap
+%if %{gcj_support}
 %{update_gcjdb}
+%endif
 
 %postun
+%update_maven_depmap
+%if %{gcj_support}
 %{clean_gcjdb}
 %endif
 
 %files
 %defattr(-,root,root,-)
 %{_javadir}/*
-
-%if %{gcj_support}
-%dir %attr(-,root,root) %{_libdir}/gcj/%{name}
-%attr(-,root,root) %{_libdir}/gcj/%{name}/i18n-1.0.jar.*
-%endif
+%{_datadir}/maven2/poms/*
+%{_mavendepmapfragdir}
+%{gcj_files}
 
 %files javadoc
 %defattr(-,root,root,-)
