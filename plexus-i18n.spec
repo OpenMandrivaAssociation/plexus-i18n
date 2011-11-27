@@ -34,7 +34,7 @@
 
 Name:           plexus-i18n
 Version:        1.0
-Release:        0.b10.2.1
+Release:        0.b10.2.3
 Summary:        Plexus I18N Component
 License:        ASL 2.0
 Group:          Development/Java
