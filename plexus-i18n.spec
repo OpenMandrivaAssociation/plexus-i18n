@@ -39,51 +39,44 @@
 %define parent plexus
 %define subname i18n
 
-Name:           plexus-i18n
-Version:        1.0
-Release:        %mkrel 0.b6.5.0.1
-Epoch:          0
-Summary:        Plexus I18N Component
-License:        Apache Software License
-Group:          Development/Java
-URL:            http://plexus.codehaus.org/
-Source0:        plexus-i18n-1.0-beta-6-src.tar.gz
+Summary:	Plexus I18N Component
+Name:		plexus-i18n
+Version:	1.0
+Release:	0.b6.5.0.1
+License:	Apache Software License
+Group:		Development/Java
+Url:		http://plexus.codehaus.org/
+Source0:	plexus-i18n-1.0-beta-6-src.tar.gz
 # svn export svn://svn.plexus.codehaus.org/plexus/tags/plexus-i18n-1.0-beta-6
 # tar czf plexus-i18n.tar.gz plexus-i18n-1.0-beta-6/
-Source1:        plexus-i18n-1.0-build.xml
-Source2:        plexus-i18n-1.0-project.xml
-Source3:        plexus-i18n-settings.xml
-Source4:        plexus-i18n-1.0-jpp-depmap.xml
-
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
-
+Source1:	plexus-i18n-1.0-build.xml
+Source2:	plexus-i18n-1.0-project.xml
+Source3:	plexus-i18n-settings.xml
+Source4:	plexus-i18n-1.0-jpp-depmap.xml
 %if ! %{gcj_support}
-BuildArch:      noarch
+BuildArch:	noarch
+%else
+BuildRequires:	java-gcj-compat-devel
 %endif
-BuildRequires:  java-rpmbuild >= 0:1.6
-BuildRequires:  ant >= 0:1.6
+BuildRequires:	java-rpmbuild >= 0:1.6
+BuildRequires:	ant >= 0:1.6
 %if %{with_maven}
-BuildRequires:  maven2 >= 2.0.4-10jpp
-BuildRequires:  maven2-plugin-compiler
-BuildRequires:  maven2-plugin-install
-BuildRequires:  maven2-plugin-jar
-BuildRequires:  maven2-plugin-javadoc
-BuildRequires:  maven2-plugin-resources
-BuildRequires:  maven2-plugin-surefire
-BuildRequires:  maven2-plugin-release
-BuildRequires:  plexus-maven-plugin
+BuildRequires:	maven2 >= 2.0.4-10jpp
+BuildRequires:	maven2-plugin-compiler
+BuildRequires:	maven2-plugin-install
+BuildRequires:	maven2-plugin-jar
+BuildRequires:	maven2-plugin-javadoc
+BuildRequires:	maven2-plugin-resources
+BuildRequires:	maven2-plugin-surefire
+BuildRequires:	maven2-plugin-release
+BuildRequires:	plexus-maven-plugin
 %endif
-
-BuildRequires:  classworlds >= 0:1.1
-BuildRequires:  plexus-container-default 
-BuildRequires:  plexus-utils 
-Requires:  classworlds >= 0:1.1
-Requires:  plexus-container-default 
-Requires:  plexus-utils 
-
-%if %{gcj_support}
-BuildRequires:                java-gcj-compat-devel
-%endif
+BuildRequires:	classworlds >= 0:1.1
+BuildRequires:	plexus-container-default 
+BuildRequires:	plexus-utils 
+Requires:	classworlds >= 0:1.1
+Requires:	plexus-container-default 
+Requires:	plexus-utils 
 
 %description
 The Plexus project seeks to create end-to-end developer tools for 
@@ -93,22 +86,19 @@ reusable components for hibernate, form processing, jndi, i18n,
 velocity, etc. Plexus also includes an application server which 
 is like a J2EE application server, without all the baggage.
 
-
 %package javadoc
-Summary:        Javadoc for %{name}
-Group:          Development/Java
+Summary:	Javadoc for %{name}
+Group:		Development/Java
 
 %description javadoc
 Javadoc for %{name}.
 
-
 %prep
-%setup -q -n plexus-i18n-1.0-beta-6
+%setup -qn plexus-i18n-1.0-beta-6
 %remove_java_binaries
 cp %{SOURCE1} build.xml
 cp %{SOURCE2} project.xml
 cp %{SOURCE3} settings.xml
-
 
 %build
 %if %{with_maven}
@@ -133,7 +123,6 @@ mvn-jpp \
         install javadoc:javadoc
 
 %else
-
 mkdir -p target/lib
 build-jar-repository -s -p target/lib \
 classworlds \
@@ -141,37 +130,28 @@ plexus/container-default \
 plexus/utils \
 
 %{ant} jar javadoc
-
 %endif
 
-
-
 %install
-rm -rf $RPM_BUILD_ROOT
 # jars
-install -d -m 755 $RPM_BUILD_ROOT%{_javadir}/plexus
+install -d -m 755 %{buildroot}%{_javadir}/plexus
 install -pm 644 target/%{name}-%{version}-beta-6.jar \
-  $RPM_BUILD_ROOT%{_javadir}/plexus/i18n-%{version}.jar
+  %{buildroot}%{_javadir}/plexus/i18n-%{version}.jar
 %add_to_maven_depmap org.codehaus.plexus %{name} %{version} JPP/%{parent} %{subname}
 
-(cd $RPM_BUILD_ROOT%{_javadir}/plexus && for jar in *-%{version}*; do ln -sf ${jar} `echo $jar| sed  "s|-%{version}||g"`; done)
+(cd %{buildroot}%{_javadir}/plexus && for jar in *-%{version}*; do ln -sf ${jar} `echo $jar| sed  "s|-%{version}||g"`; done)
 
 # poms
-install -d -m 755 $RPM_BUILD_ROOT%{_datadir}/maven2/poms
+install -d -m 755 %{buildroot}%{_datadir}/maven2/poms
 install -pm 644 pom.xml \
-    $RPM_BUILD_ROOT%{_datadir}/maven2/poms/JPP.%{parent}-%{subname}.pom
+    %{buildroot}%{_datadir}/maven2/poms/JPP.%{parent}-%{subname}.pom
 
 # javadoc
-install -d -m 755 $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-cp -pr target/site/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} $RPM_BUILD_ROOT%{_javadocdir}/%{name} 
-
+install -d -m 755 %{buildroot}%{_javadocdir}/%{name}-%{version}
+cp -pr target/site/apidocs/* %{buildroot}%{_javadocdir}/%{name}-%{version}
+ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name} 
 
 %{gcj_compile}
-
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 
 %post
 %update_maven_depmap
@@ -186,58 +166,11 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %files
-%defattr(-,root,root,-)
 %{_javadir}/*
 %{_datadir}/maven2/poms/*
 %{_mavendepmapfragdir}
 %{gcj_files}
 
 %files javadoc
-%defattr(-,root,root,-)
 %doc %{_javadocdir}/*
 
-
-%changelog
-* Wed Feb 20 2008 Alexander Kurtakov <akurtakov@mandriva.org> 0:1.0-0.b6.5.0.1mdv2008.1
-+ Revision: 173295
-- add maven2-plugin-release BR
-- install maven pom and depmap
-
-  + Olivier Blin <oblin@mandriva.com>
-    - restore BuildRoot
-
-  + Thierry Vignaud <tvignaud@mandriva.com>
-    - kill re-definition of %%buildroot on Pixel's request
-
-* Sun Dec 16 2007 Anssi Hannula <anssi@mandriva.org> 0:1.0-0.b6.3.1.3mdv2008.1
-+ Revision: 121002
-- buildrequire java-rpmbuild, i.e. build with icedtea on x86(_64)
-
-* Sat Sep 15 2007 Anssi Hannula <anssi@mandriva.org> 0:1.0-0.b6.3.1.2mdv2008.0
-+ Revision: 87315
-- rebuild to filter out autorequires of GCJ AOT objects
-- remove unnecessary Requires(post) on java-gcj-compat
-
-* Wed Jul 04 2007 David Walluck <walluck@mandriva.org> 0:1.0-0.b6.3.1.1mdv2008.0
-+ Revision: 47873
-- Import plexus-i18n
-
-
-
-* Mon Feb 19 2007 Tania Bento <tbento@redhat.com> - 0:1.0-0.b6.3jpp.1
-- Fixed %%Release tag.
-- Changed the svn URL.
-- Added instruction on how to tar the files extracted with svn export.
-- Fixed %%BuildRoot tag.
-- Removed %%post and %%postun sections for javadoc and made necessary changes.
-- Added gcj support.
-
-* Wed Oct 25 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.3jpp
-- Fix components.xml
- 
-* Tue May 30 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.2jpp
-- First JPP-1.7 release
-- Drop maven support - waiting for maven2
-
-* Mon Nov 07 2005 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.1jpp
-- First JPackage build
