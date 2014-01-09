@@ -1,3 +1,4 @@
+%{?_javapackages_macros:%_javapackages_macros}
 # Copyright (c) 2000-2007, JPackage Project
 # All rights reserved.
 #
@@ -28,55 +29,43 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-%define gcj_support 1
-
-# If you don't want to build with maven, and use straight ant instead,
-# give rpmbuild option '--without maven'
-
-%define with_maven 0
-
-%define section     free
 %define parent plexus
 %define subname i18n
 
-Summary:	Plexus I18N Component
-Name:		plexus-i18n
-Version:	1.0
-Release:	0.b6.5.0.1
-License:	Apache Software License
-Group:		Development/Java
-Url:		http://plexus.codehaus.org/
-Source0:	plexus-i18n-1.0-beta-6-src.tar.gz
-# svn export svn://svn.plexus.codehaus.org/plexus/tags/plexus-i18n-1.0-beta-6
-# tar czf plexus-i18n.tar.gz plexus-i18n-1.0-beta-6/
-Source1:	plexus-i18n-1.0-build.xml
-Source2:	plexus-i18n-1.0-project.xml
-Source3:	plexus-i18n-settings.xml
-Source4:	plexus-i18n-1.0-jpp-depmap.xml
-%if ! %{gcj_support}
-BuildArch:	noarch
-%else
-BuildRequires:	java-gcj-compat-devel
-%endif
-BuildRequires:	java-rpmbuild >= 0:1.6
-BuildRequires:	ant >= 0:1.6
-%if %{with_maven}
-BuildRequires:	maven2 >= 2.0.4-10jpp
-BuildRequires:	maven2-plugin-compiler
-BuildRequires:	maven2-plugin-install
-BuildRequires:	maven2-plugin-jar
-BuildRequires:	maven2-plugin-javadoc
-BuildRequires:	maven2-plugin-resources
-BuildRequires:	maven2-plugin-surefire
-BuildRequires:	maven2-plugin-release
-BuildRequires:	plexus-maven-plugin
-%endif
-BuildRequires:	classworlds >= 0:1.1
-BuildRequires:	plexus-container-default 
-BuildRequires:	plexus-utils 
-Requires:	classworlds >= 0:1.1
-Requires:	plexus-container-default 
-Requires:	plexus-utils 
+Name:           plexus-i18n
+Version:        1.0
+Release:        0.5.b10.2.1%{?dist}
+Summary:        Plexus I18N Component
+License:        ASL 2.0
+
+URL:           http://plexus.codehaus.org/plexus-components/plexus-i18n
+Source0:        plexus-i18n-1.0-beta-10-src.tar.bz2
+# svn export http://svn.codehaus.org/plexus/plexus-components/tags/plexus-i18n-1.0-beta-10/
+# tar cjf plexus-i18n-1.0-beta-10-src.tar.bz2 plexus-i18n-1.0-beta-10/
+
+Patch0:         %{name}-migration-to-component-metadata.patch
+Patch1:         %{name}-plexus-container-default-missing.patch
+
+BuildArch:      noarch
+BuildRequires:  jpackage-utils >= 0:1.7.2
+BuildRequires:  ant >= 0:1.6
+BuildRequires:  java-devel >= 1.6.0
+BuildRequires:  maven-local
+BuildRequires:  maven-compiler-plugin
+BuildRequires:  maven-install-plugin
+BuildRequires:  maven-jar-plugin
+BuildRequires:  maven-javadoc-plugin
+BuildRequires:  maven-resources-plugin
+BuildRequires:  maven-surefire-maven-plugin
+BuildRequires:  maven-surefire-provider-junit
+BuildRequires:  maven-doxia-sitetools
+BuildRequires:  plexus-containers-component-metadata
+BuildRequires:  classworlds >= 0:1.1
+BuildRequires:  plexus-containers-container-default
+BuildRequires:  plexus-utils
+Requires:  classworlds >= 0:1.1
+Requires:  plexus-containers-container-default
+Requires:  plexus-utils
 
 %description
 The Plexus project seeks to create end-to-end developer tools for 
@@ -86,91 +75,134 @@ reusable components for hibernate, form processing, jndi, i18n,
 velocity, etc. Plexus also includes an application server which 
 is like a J2EE application server, without all the baggage.
 
+
 %package javadoc
-Summary:	Javadoc for %{name}
-Group:		Development/Java
+Summary:        Javadoc for %{name}
+
 
 %description javadoc
 Javadoc for %{name}.
 
+
 %prep
-%setup -qn plexus-i18n-1.0-beta-6
-%remove_java_binaries
-cp %{SOURCE1} build.xml
-cp %{SOURCE2} project.xml
-cp %{SOURCE3} settings.xml
+%setup -q -n plexus-i18n-1.0-beta-10
+%patch0 -p1
+%patch1 -p1
 
 %build
-%if %{with_maven}
-sed -i -e "s|<url>__JPP_URL_PLACEHOLDER__</url>|<url>file://`pwd`/.m2/repository</url>|g" settings.xml
-sed -i -e "s|<url>__JAVADIR_PLACEHOLDER__</url>|<url>file://`pwd`/external_repo</url>|g" settings.xml
-sed -i -e "s|<url>__MAVENREPO_DIR_PLACEHOLDER__</url>|<url>file://`pwd`/.m2/repository</url>|g" settings.xml
-sed -i -e "s|<url>__MAVENDIR_PLUGIN_PLACEHOLDER__</url>|<url>file:///usr/share/maven2/plugins</url>|g" settings.xml
-sed -i -e "s|<url>__ECLIPSEDIR_PLUGIN_PLACEHOLDER__</url>|<url>file:///usr/share/eclipse/plugins</url>|g" settings.xml
-
-export MAVEN_REPO_LOCAL=$(pwd)/.m2/repository
-mkdir -p $MAVEN_REPO_LOCAL
-
-mkdir external_repo
-ln -s %{_javadir} external_repo/JPP
-
-mvn-jpp \
-        -e \
-        -s $(pwd)/settings.xml \
-        -Dmaven2.jpp.mode=true \
-        -Dmaven2.jpp.depmap.file=%{SOURCE4} \
-        -Dmaven.repo.local=$MAVEN_REPO_LOCAL \
-        install javadoc:javadoc
-
-%else
-mkdir -p target/lib
-build-jar-repository -s -p target/lib \
-classworlds \
-plexus/container-default \
-plexus/utils \
-
-%{ant} jar javadoc
-%endif
+mvn-rpmbuild -e install javadoc:aggregate
 
 %install
 # jars
-install -d -m 755 %{buildroot}%{_javadir}/plexus
-install -pm 644 target/%{name}-%{version}-beta-6.jar \
-  %{buildroot}%{_javadir}/plexus/i18n-%{version}.jar
-%add_to_maven_depmap org.codehaus.plexus %{name} %{version} JPP/%{parent} %{subname}
-
-(cd %{buildroot}%{_javadir}/plexus && for jar in *-%{version}*; do ln -sf ${jar} `echo $jar| sed  "s|-%{version}||g"`; done)
+install -Dpm 644 target/%{name}-%{version}-beta-10.jar \
+     %{buildroot}/%{_javadir}/%{parent}/%{subname}.jar
 
 # poms
-install -d -m 755 %{buildroot}%{_datadir}/maven2/poms
-install -pm 644 pom.xml \
-    %{buildroot}%{_datadir}/maven2/poms/JPP.%{parent}-%{subname}.pom
+install -Dpm 644 pom.xml %{buildroot}/%{_mavenpomdir}/JPP.%{name}.pom
+%add_maven_depmap JPP.%{name}.pom %{parent}/%{subname}.jar
 
 # javadoc
-install -d -m 755 %{buildroot}%{_javadocdir}/%{name}-%{version}
-cp -pr target/site/apidocs/* %{buildroot}%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name} 
-
-%{gcj_compile}
-
-%post
-%update_maven_depmap
-%if %{gcj_support}
-%{update_gcjdb}
+install -d -m 755 %{buildroot}/%{_javadocdir}/%{name}
+cp -pr target/site/apidocs/* %{buildroot}/%{_javadocdir}/%{name}
+%if 0%{?fedora}
+%else
+# rpm5 parser...
+sed -i 's|1.0-beta-10|1.0.beta.10|g;' %{buildroot}%{_mavendepmapfragdir}/*
 %endif
 
-%postun
-%update_maven_depmap
-%if %{gcj_support}
-%{clean_gcjdb}
-%endif
+%pre javadoc
+# workaround for rpm bug, can be removed in F-19
+[ $1 -gt 1 ] && [ -L %{_javadocdir}/%{name} ] && \
+rm -rf $(readlink -f %{_javadocdir}/%{name}) %{_javadocdir}/%{name} || :
 
 %files
-%{_javadir}/*
-%{_datadir}/maven2/poms/*
-%{_mavendepmapfragdir}
-%{gcj_files}
+%{_javadir}/%{parent}/%{subname}.jar
+%{_mavenpomdir}/JPP.%{name}.pom
+%{_mavendepmapfragdir}/%{name}
 
 %files javadoc
-%doc %{_javadocdir}/*
+%doc %{_javadocdir}/%{name}
 
+%changelog
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0-0.5.b10.2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0-0.4.b10.2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Wed Feb 06 2013 Java SIG <java-devel@lists.fedoraproject.org> - 1.0-0.3.b10.2
+- Update for https://fedoraproject.org/wiki/Fedora_19_Maven_Rebuild
+- Replace maven BuildRequires with maven-local
+
+* Thu Nov 22 2012 Jaromir Capik <jcapik@redhat.com> - 1.0-0.2.b10.2
+- Migration to plexus-containers-container-default
+
+* Mon Nov 12 2012 Mikolaj Izdebski <mizdebsk@redhat.com> - 1.0-0.1.b10.2
+- Fix Release tag
+
+* Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0-0.b10.2.5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Tue Mar 06 2012 Jaromir Capik <jcapik@redhat.com> - 1.0-0.b10.2.4
+- Missing plexus-container-default dependency added in the pom.xml
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0-0.b10.2.3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Thu Jul 28 2011 Jaromir Capik <jcapik@redhat.com> - 1.0-0.b10.2.2
+- Migration to maven3
+- Migration from plexus-maven-plugin to plexus-containers-component-metadata
+- Minor spec file changes according to the latest guidelines
+
+* Wed Feb 09 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:1.0-0.b10.2.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Wed Dec 23 2009 Alexander Kurtakov <akurtako@redhat.com> 0:1.0-0.b10.2
+- BR java-devel 1.6.0.
+
+* Wed Dec 23 2009 Alexander Kurtakov <akurtako@redhat.com> 0:1.0-0.b10.1
+- Update to beta 10.
+- Drop gcj and fix BRs.
+
+* Sun Jul 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:1.0-0.b6.5.3.3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
+
+* Thu Jun 18 2009 Deepak Bhole <dbhole@redhat.com> - 0:1.0-0.b6.5.3.2
+- Added pom.xml and components.xml to META-INF
+
+* Thu Feb 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:1.0-0.b6.5.3.1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
+* Wed Jul  9 2008 Tom "spot" Callaway <tcallawa@redhat.com> - 0:1.0-0.b6.5.3
+- drop repotag
+
+* Wed Feb 27 2008 Deepak Bhole <dbhole@redhat.com> - 0:1.0-0.b6.5jpp.2
+- Build with maven
+
+* Tue Jan 22 2008 Permaine Cheung <pcheung@redhat.com> - 0:1.0-0.b6.5jpp.1
+- Update to the same version as upstream
+
+* Thu Apr 26 2007 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.5jpp
+- Reupload to fix metadata
+
+* Sat Mar 24 2007 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.4jpp
+- Optionally build without maven
+- Add gcj_support option
+ 
+* Mon Feb 19 2007 Tania Bento <tbento@redhat.com> - 0:1.0-0.b6.3jpp.1
+- Fixed %%Release tag.
+- Changed the svn URL.
+- Added instruction on how to tar the files extracted with svn export.
+- Fixed %%BuildRoot tag.
+- Removed %%post and %%postun sections for javadoc and made necessary changes.
+- Added gcj support.
+
+* Wed Oct 25 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.3jpp
+- Fix components.xml
+ 
+* Tue May 30 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.2jpp
+- First JPP-1.7 release
+- Drop maven support - waiting for maven2
+
+* Mon Nov 07 2005 Ralph Apel <r.apel at r-apel.de> - 0:1.0-0.b6.1jpp
+- First JPackage build
