@@ -4,7 +4,7 @@
 
 Name:           plexus-i18n
 Version:        1.0
-Release:        0.6.b10.3
+Release:        0.6.b10.4
 Summary:        Plexus I18N Component
 License:        ASL 2.0
 Group:          Development/Java
@@ -23,6 +23,7 @@ BuildRequires:  mvn(org.codehaus.plexus:plexus-component-metadata)
 BuildRequires:  mvn(org.codehaus.plexus:plexus-components:pom:)
 BuildRequires:  mvn(org.codehaus.plexus:plexus-container-default)
 BuildRequires:  mvn(org.codehaus.plexus:plexus-utils)
+BuildRequires:	junit
 
 %description
 The Plexus project seeks to create end-to-end developer tools for 
@@ -45,6 +46,8 @@ Javadoc for %{name}.
 sed -i 's/1.0-beta-10/1.0.beta.10/' pom.xml
 %patch0 -p1
 %patch1 -p1
+
+%pom_add_dep junit:junit::test
 
 %build
 %mvn_build
