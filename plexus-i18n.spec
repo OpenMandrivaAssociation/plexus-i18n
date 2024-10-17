@@ -8,7 +8,7 @@ Release:        0.6.b10.4
 Summary:        Plexus I18N Component
 License:        ASL 2.0
 Group:          Development/Java
-URL:            http://plexus.codehaus.org/plexus-components/plexus-i18n
+URL:            https://plexus.codehaus.org/plexus-components/plexus-i18n
 BuildArch:      noarch
 
 # svn export http://svn.codehaus.org/plexus/plexus-components/tags/plexus-i18n-1.0-beta-10/
